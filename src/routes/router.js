@@ -1,67 +1,64 @@
 import express from "express";
-import * as DB from "../models/products.js";
-import * as CART from "../models/carts.js";
+import { cart } from "../controllers/carts.js";
+import { product } from '../controllers/products.js'
 
 const dataApi = express.Router();
 
 /**
  *  GET methods
  */
-dataApi.get("/productos/", (req, res) => {
-  res.status(200).json(DB.getProducts);
+dataApi.get("/productos/", async (req, res) => {
+  res.status(200).json(await product.getAll())
 });
-dataApi.get("/productos/:id", (req, res) => {
+dataApi.get("/productos/:id", async (req, res) => {
   const { id } = req.params;
-  res.status(200).send(DB.dataController.getProductById(parseInt(id)));
+  res.status(200).json(await product.getProductById(id));
 });
-dataApi.get("/carrito/:id/productos", (req, res) => {
+dataApi.get("/carrito/:id/productos", async (req, res) => {
   const { id } = req.params;
-  res.status(200).json(CART.cartController.getCartProducts(parseInt(id)));
+  res.status(200).json(await cart.getCartProducts(id));
 });
 /**
  *  POST methods
  */
-dataApi.post("/productos", (req, res) => {
-  DB.dataController.setProduct(req.body);
-  res.send("producto agregado");
+dataApi.post("/productos", async (req, res) => {
+  await product.setProduct(req.body);
+  res.status(200).send("producto agregado");
 });
-dataApi.post("/carrito", (req, res) => {
-  const newCart = CART.cartController.setCart();
-  res.status(200).json(newCart);
+dataApi.post("/carrito", async (req, res) => {
+  const newCart = await cart.setCart();
+  res.status(200).send('carrito creado');
 });
-dataApi.post("/carrito/:id/productos/:product_id", (req, res) => {
-  const { id, product_id } = req.params;
-  const product = DB.dataController.getProductById(parseInt(product_id));
-  const cart = CART.cartController.setCartProducts(parseInt(id), product);
-  res.status(200).json(cart);
+dataApi.post("/carrito/:cart_id/productos/:product_id", async (req, res) => {
+  const { cart_id, product_id } = req.params;
+  await cart.setCartProducts(cart_id, product_id)
+  res.status(200).json(await cart.getCartProducts(cart_id));
 });
 /**
  *  PUT methods
  */
-dataApi.put("/productos/:id", (req, res) => {
+dataApi.put("/productos/:id", async (req, res) => {
   const { id } = req.params;
-  const updated = DB.dataController.updateProduct(parseInt(id), req.body);
-  res.send(updated);
+  const updated = await product.updateProduct(req.body, id);
+  res.status(200).json(await product.getProductById(id));
 });
 /**
  *  DELETE methods
  */
-dataApi.delete("/productos/:id", (req, res) => {
+dataApi.delete("/productos/:id", async (req, res) => {
   const { id } = req.params;
-  res.send(DB.dataController.deleteProduct(parseInt(id)));
+  await product.deleteProduct(id)
+  res.status(200).send('Producto eliminado');
 });
-dataApi.delete("/carrito/:id", (req, res) => {
+dataApi.delete("/carrito/:id", async (req, res) => {
   const { id } = req.params;
-  const deleted = CART.cartController.deleteCart(parseInt(id));
+  const deleted = await cart.deleteCart(id);
   res.status(200).json(deleted);
 });
-dataApi.delete("/carrito/:id/productos/:product_id", (req, res) => {
+dataApi.delete("/carrito/:id/productos/:product_id", async (req, res) => {
   const { id, product_id } = req.params;
-  const productDeleted = CART.cartController.deleteCartProducts(
-    parseInt(id),
-    parseInt(product_id)
-  );
-  res.status(200).json(productDeleted);
+  const removed = await cart.deleteCartProduct(id, product_id)
+  res.status(200).json(removed)
 });
 
 export default dataApi;
